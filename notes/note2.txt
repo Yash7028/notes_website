@@ -1,0 +1,3 @@
+Geometry:
+- Circle area: πr²
+- Pythagoras theorem: a² + b² = c²

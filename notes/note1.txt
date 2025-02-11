@@ -1,3 +1,289 @@
-Algebra:
-- Quadratic formula: x = [-b ± √(b²-4ac)]/2a
-- Linear equations: y = mx + b
+pract 1,2: 
+
+
+# 1. Update package list and install prerequisites
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl
+
+# 2. Create a directory for Docker keyrings
+sudo install -m 0755 -d /etc/apt/keyrings
+
+# 3. Download and add Docker’s GPG key
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+
+# 4. Add the Docker repository to Apt sources
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
+sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# 5. Update package list again
+sudo apt-get update
+
+# 6. Install Docker Engine, CLI, and other components
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
+
+# 7. Add current user to the Docker group (to run Docker without sudo)
+sudo usermod -aG docker $USER
+
+# 8. Apply group changes (without reboot)
+newgrp docker
+
+# 9. Verify Docker installation
+docker --version
+docker run hello-world  # Test if Docker is working correctly
+
+optional 
+# 9.1
+sudo systemctl status docker
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo systemctl restart docker
+
+#9.2
+sudo usermod -aG docker $USER
+newgrp docker
+docker run hello-world  # Test if Docker is working correctly
+
+# 10.Verify if docker is working
+sudo docker pull busybox
+sudo docker images
+
+
+# (Optional) If issues occur, reboot the system
+# sudo reboot
+
+# install nodejs
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+&&\
+sudo apt-get install -y nodejs
+node -v
+
+#code 
+const http = require("http");
+
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/html" });
+    res.write("Hello Node.js"); // Correct method
+    res.end(); // Always end the response
+});
+
+// Listen on port 8080 and log the correct port
+server.listen(8080, () => console.log("Listening on port 8080"));
+
+
+#install java
+sudo apt install default-jdk
+java --version
+
+
+#GO installation
+remove command
+sudo rm -rf /usr/local/go 
+
+check exists
+ls -lh go1.22.0.linux-amd64.tar.gz
+
+download
+wget https://go.dev/dl/go1.22.0.linux-amd64.tar.gz
+
+check exists
+ls -lh go1.22.0.linux-amd64.tar.gz
+
+Extract
+sudo rm -rf /usr/local/go 
+sudo tar -C /usr/local -xzf go1.22.0.linux-amd64.tar.gz
+
+verify
+export PATH=$PATH:/usr/local/go/bin
+go version
+
+#Git installation
+sudo apt install git
+git --version
+
+pract 2: 
+
+#Hyperledger Fabric:
+Before installing hyper ledger make sure docker is up and running.
+sudo systemctl status docker
+
+hyper download
+curl -sSL http://bit.ly/2ysbOFE | bash -s 2.2.0
+
+
+#Remove Conflicting Containers
+docker rm -f peer0.org1.example.com peer0.org2.example.com orderer.example.com
+
+#
+./network.sh up 
+
+./network.sh createChannel
+
+./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-java -ccl java
+
+mvn archetype:generate -DgroupId=com.example.fabric -DartifactId=fabric-client -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+
+cd fabric-client
+
+mvn clean install
+
+java -cp target/fabric-client-1.0-SNAPSHOT.jar com.example.fabric.FabricClient
+./network.sh down
+
+
+java code
+
+package com.example.fabric;
+
+import org.hyperledger.fabric.gateway.*;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+/**
+ * Hello world!
+ */
+public class FabricClient {
+    public static void main(String[] args) {
+        try {
+            Path walletPath = Paths.get("fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp");
+            Wallet wallet = Wallets.newFileSystemWallet(walletPath);
+
+            // Load Fabric network configuration
+            Path networkConfigPath = Paths.get("fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.yaml");
+
+            // Connect to the Fabric network
+            Gateway.Builder builder = Gateway.createBuilder();
+            builder.identity(wallet, "User1").networkConfig(networkConfigPath);
+            
+            try (Gateway gateway = builder.connect()) {
+                Network network = gateway.getNetwork("mychannel");
+                Contract contract = network.getContract("basic");
+
+                // Submit a transaction to create an asset
+                contract.submitTransaction("CreateAsset", "asset1", "blue", "10", "JohnDoe", "5000");
+                System.out.println("✅ Asset created successfully!");
+
+                // Query the asset
+                byte[] result = contract.evaluateTransaction("ReadAsset", "asset1");
+                System.out.println("🔍 Query Result: " + new String(result));
+            }
+        } catch (IOException e) {
+            System.err.println("❌ IO Exception: " + e.getMessage());
+            e.printStackTrace();
+        } catch (ContractException e) {
+            System.err.println("❌ Contract Exception: " + e.getMessage());
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("❌ Unexpected error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}
+
+
+
+pom.xml
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example.fabric</groupId>
+    <artifactId>fabric-client</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>fabric-client</name>
+    <url>http://maven.apache.org</url>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Hyperledger Fabric SDK -->
+        <dependency>
+            <groupId>org.hyperledger.fabric-sdk-java</groupId>
+            <artifactId>fabric-sdk-java</artifactId>
+            <version>2.2.0</version>
+        </dependency>
+
+        <!-- Hyperledger Fabric Gateway (Required for org.hyperledger.fabric.gateway) -->
+        <!-- https://mvnrepository.com/artifact/org.hyperledger.fabric/fabric-gateway-java -->
+<dependency>
+    <groupId>org.hyperledger.fabric</groupId>
+    <artifactId>fabric-gateway-java</artifactId>
+    <version>2.2.9</version>
+</dependency>
+
+
+        <!-- Logging (Required by Fabric SDK) -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.14.1</version>
+        </dependency>
+
+        <!-- JSON Processing (Required for Fabric SDK) -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.8.6</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+    <plugins>
+        <!-- Compiler Plugin -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.8.1</version>
+            <configuration>
+                <source>11</source>
+                <target>11</target>
+            </configuration>
+        </plugin>
+
+        <!-- Shade Plugin (Creates Fat/Uber JAR) -->
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.2.4</version>
+            <executions>
+                <execution>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>shade</goal>
+                    </goals>
+                    <configuration>
+                        <transformers>
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <mainClass>com.example.fabric.FabricClient</mainClass>
+                            </transformer>
+                        </transformers>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+
+</project>
+
+
+

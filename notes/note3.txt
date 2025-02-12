@@ -1,121 +1,33 @@
-pract 5 :Car auction network: A Hello World example with Hyperledger
-Fabric Node SDK and IBM Block chain Starter Plan. Use Hyperledger
-Fabric to invoke chaincode while storing results and data in the starter
-plan
+pract 3:zenmap
 
-# 1. Update package list and install prerequisites
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl
+nmap -O 192.168.0.102
 
-# 2. Create a directory for Docker keyrings
-sudo install -m 0755 -d /etc/apt/keyrings
+1. Host Enumeration(Discovering Live Hosts)
+nmap -sn 192.168.1.0/24
+Explanation:
+-sn → Disables port scanning, only checks which hosts are alive.
 
-# 3. Download and add Docker’s GPG key
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+2. Port Scanning (Finding Open Ports)
+nmap -p 1-65535 192.168.1.10
+You can use -p- instead of -p 1-65535 for the same effect.
 
-sudo chmod a+r /etc/apt/keyrings/docker.asc
+3. Service and Version Detection
+nmap -sV 192.168.1.10
+-sV detects the service versions running on open ports.
 
+4. OS Detection
+nmap -O 192.168.1.10
 
-# 4. Add the Docker repository to Apt sources
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
-https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | \
-sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-# 5. Update package list again
-sudo apt-get update
-
-# 6. Install Docker Engine, CLI, and other components
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
-
-# 7. Add current user to the Docker group (to run Docker without sudo)
-sudo usermod -aG docker $USER
-
-# 8. Apply group changes (without reboot)
-newgrp docker
-
-# 9. Verify Docker installation
-docker --version
-docker run hello-world  # Test if Docker is working correctly
-
-optional 
-# 9.1
-sudo systemctl status docker
-sudo systemctl start docker
-sudo systemctl enable docker
-sudo systemctl restart docker
-
-#9.2
-sudo usermod -aG docker $USER
-newgrp docker
-docker run hello-world  # Test if Docker is working correctly
-
-# 10.Verify if docker is working
-sudo docker pull busybox
-sudo docker images
+5. Comprehensive Scan (All in One)
+sudo nmap -A -T4 -p- 192.168.1.10
+-A → Enables OS and version detection.
+-T4 → Increases speed (T0-T5, where T5 is fastest but aggressive).
+-p- → Scans all ports.
 
 
-#Hyperledger Fabric:
-Before installing hyper ledger make sure docker is up and running.
-sudo systemctl status docker
+=========================================
+hping3 -C 3 192.168.0.102
+hping3 --scan 1-3000 -S 192.168.21.129
+hping3 192.168.21.129 --udp --rand-source --data 500
 
-hyper download
-curl -sSL http://bit.ly/2ysbOFE | bash -s 2.2.0
-
-
-#Remove Conflicting Containers
-docker rm -f peer0.org1.example.com peer0.org2.example.com orderer.example.com
-
-
-========================================================
-
-sudo apt install jq
-
-Before installing hyper ledger make sure docker is up and running.
-sudo systemctl status docker
-
-#hyper download
-curl -sSL http://bit.ly/2ysbOFE | bash -s 2.2.0
-
-#(Optional) Remove Conflicting Containers
-docker rm -f peer0.org1.example.com peer0.org2.example.com orderer.example.com
-
-
-cd fabric-samples/test-network
-./network.sh down
-
-./network.sh up createChannel -ca
-
-./network.sh deployCC -ccn abac -ccp ../asset-transfer-abac/chaincode-go/ -ccl go
-
-export PATH=${PWD}/../bin:${PWD}:$PATH
-
-export FABRIC_CFG_PATH=$PWD/../config/
-
-===============================
-
-cd test-network
-./network.sh down
-
-docker rm -f $(docker ps -aq)
-docker rmi -f $(docker images | grep fabcar | awk '{print $3}')
-
-cd fabcar
-./startFabric.sh javascript
-
-cd javascript
-npm i
-
-ls
-
-node enrollAdmin.js
-
-node registerUser.js
-
-node query.js
-
-const result = await contract.evaluateTransaction('queryCar',
-'CAR4');
-
-node query.js
-
-node invoke.js
+wireshark

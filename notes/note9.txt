@@ -1,0 +1,7 @@
+discover wifi
+
+open cmd
+netsh wlan show network
+
+netsh wlan show network mode=bssid
+

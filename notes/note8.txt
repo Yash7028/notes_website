@@ -1,0 +1,5 @@
+prac 8: SQL Injection.
+
+testfire.net
+
+' OR 1=1 --

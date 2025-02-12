@@ -1,65 +1,14 @@
-//pract 6 votes
+prac 4: vulnerability scanning and assessment
 
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+sudo nmap -sV -p21-8080 --script vulners 192.68.0.102
 
-contract Voting {
-    // Declare variables to store the total votes for each team
-    uint256 public votesForTeamA;
-    uint256 public votesForTeamB;
-    uint256 public votesForTeamC;
-    address public owner;
-    
-    mapping(address => bool) authorizedVoters;
+======================================================
+nikto -h scanner.nmap.org
+nikto -h https://nmap.org -ssl
+nikto -h 172.16.6.117
+cat > domain.txt 
+scanme.nmap.org
+nmap.org
 
-    constructor() {
-        owner = msg.sender;
-    }
-
-    modifier onlyAuthorizedVoter() {
-        require(authorizedVoters[msg.sender] == true, "You are not authorized to vote");
-        _;
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only the owner can call this function");
-        _;
-    }
-
-    // Function to allow a voter to cast their vote for a team
-    function vote(uint256 _team) public onlyAuthorizedVoter {
-        // Check the value of _team and increment the corresponding team's vote count
-        if (_team == 1) {
-            votesForTeamA += 1;
-        } else if (_team == 2) {
-            votesForTeamB += 1;
-        } else if (_team == 3) {
-            votesForTeamC += 1;
-        } else {
-            revert("Invalid team selection");
-        }
-    }
-
-    // Function to add a voter to the list of authorized voters
-    function addVoter(address _voter) public onlyOwner {
-        authorizedVoters[_voter] = true;
-    }
-
-    // Function to declare results of the vote
-    function getWinner() public view returns (string memory result) {
-        if (votesForTeamA > votesForTeamB && votesForTeamA > votesForTeamC) {
-            result = "Team A is the winner!";
-        } else if (votesForTeamB > votesForTeamA && votesForTeamB > votesForTeamC) {
-            result = "Team B is the winner!";
-        } else if (votesForTeamC > votesForTeamA && votesForTeamC > votesForTeamB) {
-            result = "Team C is the winner!";
-        } else {
-            result = "There is a tie!";
-        }
-    }
-
-    // Function to get the total votes cast
-    function getTotalVotes() public view returns (uint256) {
-        return votesForTeamA + votesForTeamB + votesForTeamC;
-    }
-}
+nikto -h domain.txt
+nikto -h nmap.org -o scan.txt

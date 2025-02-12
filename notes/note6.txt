@@ -1,0 +1,18 @@
+exploit web app
+
+# open kali terminal 
+sudo apt install zaproxy
+# it will install the zaproxy 
+# after installing it enter
+zaproxy
+update-alternatives --config java
+# it will open the zaproxy
+# in zaproxy
+click on 'AUTOMATED SCAN'
+in 'url to attack' - enter 'certifiedhacker.com'
+click on 'ATTACK'
+click on 'ALERT' 
+in the section below it choose any one ALERT and save 
+it will open the website directly
+click on REPORT > GENERATE REPORT 
+it will generate the scanning report 

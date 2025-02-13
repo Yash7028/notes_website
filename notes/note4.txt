@@ -12,3 +12,84 @@ nmap.org
 
 nikto -h domain.txt
 nikto -h nmap.org -o scan.txt
+
+These commands involve using Nikto, a web server vulnerability scanner, to scan various targets. Let’s break them down step by step:
+
+1. nikto -h scanner.nmap.org
+
+nikto → Runs the Nikto web scanner.
+
+-h scanner.nmap.org → Specifies the target hostname (scanner.nmap.org).
+
+Purpose: Scans scanner.nmap.org for vulnerabilities.
+
+
+
+---
+
+2. nikto -h https://nmap.org -ssl
+
+-h https://nmap.org → Specifies the target website (https://nmap.org).
+
+-ssl → Ensures that the scan is performed over HTTPS (though Nikto usually detects this automatically).
+
+Purpose: Scans nmap.org over HTTPS for security vulnerabilities.
+
+
+
+---
+
+3. nikto -h 172.16.6.117
+
+-h 172.16.6.117 → Specifies a local/private network IP address (172.16.6.117).
+
+Purpose: Scans the specified IP for web server vulnerabilities.
+
+
+
+---
+
+4. cat > domain.txt
+
+cat > domain.txt → Creates a file named domain.txt and waits for user input to add content.
+
+The user will manually enter domains (e.g., scanme.nmap.org and nmap.org), then press Ctrl+D to save.
+
+Purpose: Stores multiple domains in domain.txt for later scanning.
+
+
+
+---
+
+5. nikto -h domain.txt
+
+-h domain.txt → Reads the list of domains from domain.txt and scans each one.
+
+Purpose: Performs vulnerability scanning on multiple targets listed in domain.txt.
+
+
+
+---
+
+6. nikto -h nmap.org -o scan.txt
+
+-h nmap.org → Scans nmap.org.
+
+-o scan.txt → Saves the scan results into a file called scan.txt.
+
+Purpose: Logs the scan output for later review.
+
+
+Summary:
+
+The commands scan individual websites (scanner.nmap.org, nmap.org) and an IP (172.16.6.117).
+
+A file (domain.txt) is created to store multiple domains for bulk scanning.
+
+The scan results are saved in scan.txt.
+
+
+Would you like further details on Nikto scanning options?
+
+
+

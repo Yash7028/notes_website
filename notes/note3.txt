@@ -1,33 +1,90 @@
-pract 3:zenmap
+3.deep learning for recognizing classes for datasets like CIFAR10 images for previously unseen images and assign them to one of the 10
+classes
 
-nmap -O 192.168.0.102
+import tensorflow as tf
+from tensorflow.keras import datasets, layers, models
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.metrics import confusion_matrix , classification_report
+import numpy as np
 
-1. Host Enumeration(Discovering Live Hosts)
-nmap -sn 192.168.1.0/24
-Explanation:
--sn → Disables port scanning, only checks which hosts are alive.
+(X_train, y_train) , (X_test,y_test) = datasets.cifar10.load_data()
 
-2. Port Scanning (Finding Open Ports)
-nmap -p 1-65535 192.168.1.10
-You can use -p- instead of -p 1-65535 for the same effect.
+X_train.shape
+X_test.shape
 
-3. Service and Version Detection
-nmap -sV 192.168.1.10
--sV detects the service versions running on open ports.
+y_train = y_train.reshape(-1,)
+y_train[:5]
+y_test = y_test.reshape(-1,)
 
-4. OS Detection
-nmap -O 192.168.1.10
+# CIFAR-10 image data
+for i in range(9):
+  #definesubplot
+    plt.subplot(330+1+i)
+    # plot raw pixel data
+    plt.imshow(X_train[i])
+   #show the figure
+    plt.show()
 
-5. Comprehensive Scan (All in One)
-sudo nmap -A -T4 -p- 192.168.1.10
--A → Enables OS and version detection.
--T4 → Increases speed (T0-T5, where T5 is fastest but aggressive).
--p- → Scans all ports.
+def plot_sample(X, y, index):
+    plt.figure(figsize = (15,2))
+    plt.imshow(X[index])
+    plt.xlabel(classes[y[index]])
+
+X_train = X_train / 255.0
+X_test = X_test / 255.0
+
+ann = models.Sequential([
+layers.Flatten(input_shape=(32,32,3)),
+layers.Dense(3000, activation='relu'),
+layers.Dense(1000, activation='relu'),
+layers.Dense(10, activation='softmax')
+])
+
+ann.compile(optimizer='SGD',
+loss='sparse_categorical_crossentropy',
+metrics=['accuracy'])
+
+ann.fit(X_train, y_train, epochs=5)
+
+y_pred = ann.predict(X_test)
+y_pred_classes = [np.argmax(element) for element in y_pred]
+
+print("Classification Report: \n", classification_report(y_test, y_pred_classes))
+
+cnn = models.Sequential([
+layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', input_shape=(32, 32, 3)),
+layers.MaxPooling2D((2, 2)),
+layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
+layers.MaxPooling2D((2, 2)),
+layers.Flatten(),
+layers.Dense(64, activation='relu'),
+layers.Dense(10, activation='softmax'),
+])
+
+cnn.compile(optimizer='adam',
+loss='sparse_categorical_crossentropy',
+metrics=['accuracy'])
+
+cnn.fit(X_train, y_train, epochs=3)
+
+cnn.evaluate(X_test,y_test)
+
+y_pred = cnn.predict(X_test)
+y_pred[:5]
+
+Y_pred_classes = [np.argmax(element) for element in y_pred]
+
+y_pred_classes[:5]
+y_test[:5]
+
+plot_sample(X_test, y_test,4)
+classes[y_pred_classes[4]]
 
 
-=========================================
-hping3 -C 3 192.168.0.102
-hping3 --scan 1-3000 -S 192.168.21.129
-hping3 192.168.21.129 --udp --rand-source --data 500
 
-wireshark
+
+
+
+
+

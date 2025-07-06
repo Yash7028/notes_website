@@ -1,7 +1,71 @@
-discover wifi
+9.LSTM for sentiment analysis on datasets like UMICH SI650 for
+similar
 
-open cmd
-netsh wlan show network
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+from sklearn.model_selection import train_test_split
 
-netsh wlan show network mode=bssid
+# 1. Simulated UMICH SI650-style dataset
+texts = [
+    "I love this movie",
+    "This product is amazing",
+    "Horrible experience, never again",
+    "I'm very happy with the service",
+    "Worst food ever",
+    "Absolutely fantastic performance",
+    "I hate this place",
+    "Best purchase I've made",
+    "Terrible quality, very disappointed",
+    "What a wonderful day"
+]
+
+labels = [1, 1, 0, 1, 0, 1, 0, 1, 0, 1]  # 1 = Positive, 0 = Negative
+
+# 2. Tokenize text
+tokenizer = Tokenizer(num_words=1000)
+tokenizer.fit_on_texts(texts)
+sequences = tokenizer.texts_to_sequences(texts)
+
+# 3. Pad sequences
+maxlen = 10
+X = pad_sequences(sequences, maxlen=maxlen)
+y = np.array(labels)
+
+# 4. Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+# 5. Build LSTM model
+model = Sequential([
+    Embedding(input_dim=1000, output_dim=32, input_length=maxlen),
+    LSTM(64),
+    Dense(1, activation='sigmoid')
+])
+
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+# 6. Train model
+model.fit(X_train, y_train, epochs=10, validation_split=0.2)
+
+# 7. Evaluate
+loss, acc = model.evaluate(X_test, y_test)
+print(f"Test Accuracy: {acc * 100:.2f}%")
+
+# 8. Test on new sentence
+def predict_sentiment(text):
+    seq = tokenizer.texts_to_sequences([text])
+    padded = pad_sequences(seq, maxlen=maxlen)
+    pred = model.predict(padded)[0][0]
+    print(f"Prediction: {'Positive' if pred > 0.5 else 'Negative'} ({pred:.2f})")
+
+# Try it
+predict_sentiment("I love this place!")
+predict_sentiment("This is the worst day ever.")
+predict_sentiment( "Worst food ever")
+
+
+
 

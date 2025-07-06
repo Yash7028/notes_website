@@ -1,205 +1,52 @@
-pract2 : opi and passive reconnaissance
+2.regularization to prevent the model from overfitting.
 
-ping www.certifiedhacker.com
-ping www.certifiedhacker.com -f -l 1500
-ping www.certifiedhacker.com -f -l 1300
-ping www.certifiedhacker.com -f -l 1473
-ping www.certifiedhacker.com -f -l 1472
-ping www.certifiedhacker.com -i 3
-tracert www.certifiedhacker.com
-ping www.certifiedhacker.com -i 2 -n 1 
-ping www.certifiedhacker.com -i 3 -n 1 
-ping www.certifiedhacker.com -i 4 -n 1 
-ping www.certifiedhacker.com -i 15 -n 1 
-ping www.certifiedhacker.com -i 20 -n 1 
-ping www.certifiedhacker.com -i 24 -n 1 
-nslookup
-> set type=a
-> ns1.bluehost.com
 
+# Importing the libraries
+import numpy as np
+import pandas as pd
+from sklearn import metrics
+from sklearn.linear_model import Lasso # L2 Regularization or Lasso
+from sklearn.linear_model import Ridge # L1 Regularization or Ridge
 
-hping3 -c 3 192.168.21.129
+# Import dataset
+df_train = pd.read_csv('train.csv')
+df_test = pd.read_csv('test.csv')
 
-hping3 --scan  1-3000 -S 192.168.21.129
+# Drop  duplicates if their  areany.
+df_train =df_train.dropna()
+df_test =df_test.dropna()
 
- hping3 192.168.21.129 --udp  --rand-source  --data 500
+# Specifying training variables for Regression
+x_train = df_train['x']
+x_train = x_train.values.reshape(-1,1)
+y_train = df_train['y']
+y_train = y_train.values.reshape(-1,1)
 
- using Wireshark 
+# Specifying test variables for Regression
+x_test = df_test['x']
+x_test = x_test.values.reshape(-1,1)
+y_test = df_test['y']
+y_test = y_test.values.reshape(-1,1)
 
- hping3 -S 192.168.21.129 -p 80 -c 5
+#Buildong Lasso Regression Model
+lasso = Lasso()
 
- hping3 192.168.21.129  --flood
+#Fitting model on Train set
+lasso.fit(x_train,y_train)
 
+#Calculate Root Mean Squared Error.
+print("Lasso Train RMSE:", np.sqrt(metrics.mean_squared_error(y_train, lasso.predict(x_train))),5)
+print("Lasso Test RMSE:", np.sqrt(metrics.mean_squared_error(y_test, lasso.predict(x_test))),5)
 
+# Buildin Ridge regression model
+ridge = Ridge()
 
-These commands primarily use ping, tracert, and nslookup to test network connectivity, measure response times, and gather DNS information. Here's a breakdown:
+# fitting model on train set
+ridge.fit(x_train,y_train)
 
-1. Basic Ping Test
+# Calculating Root Mean Squared Error.
+print("Ridge Train RMSE:", np.sqrt(metrics.mean_squared_error(y_train, ridge.predict(x_train))),5)
+print("Ridge Test RMSE:", np.sqrt(metrics.mean_squared_error(y_test, ridge.predict(x_test))),5)
 
-ping www.certifiedhacker.com
 
-Sends ICMP (Internet Control Message Protocol) packets to www.certifiedhacker.com.
-
-Measures round-trip time (RTT) to check if the host is reachable.
-
----
-
-2. Ping with Large Packet Size
-
-ping www.certifiedhacker.com -f -l 1500
-ping www.certifiedhacker.com -f -l 1300
-ping www.certifiedhacker.com -f -l 1473
-ping www.certifiedhacker.com -f -l 1472
-
--f → Sets the Do Not Fragment (DF) flag, preventing packet fragmentation.
-
--l <size> → Specifies packet size in bytes.
-
-Purpose:
-
-Tests the Maximum Transmission Unit (MTU).
-
-If packets are too large for a network path, they will be dropped.
-
-The correct MTU is typically 1472 bytes (1500 - 28 for headers).
-
----
-
-3. Ping with Time-to-Live (TTL) Values
-
-ping www.certifiedhacker.com -i 3
-ping www.certifiedhacker.com -i 2 -n 1
-ping www.certifiedhacker.com -i 3 -n 1
-ping www.certifiedhacker.com -i 4 -n 1
-ping www.certifiedhacker.com -i 15 -n 1
-ping www.certifiedhacker.com -i 20 -n 1
-ping www.certifiedhacker.com -i 24 -n 1
-
--i <TTL> → Sets Time-To-Live (TTL) value for the packet.
-
--n 1 → Sends only one ping request.
-
-Purpose:
-
-TTL limits how far a packet can travel before being discarded.
-
-Useful for tracing the network path to the target.
-
----
-
-4. Traceroute (Tracing Network Path)
-
-tracert www.certifiedhacker.com
-
-Sends ICMP packets with increasing TTL values to trace each hop along the route.
-
-Purpose:
-
-Identifies network bottlenecks or packet loss
-
----
-
-5. DNS Lookup with nslookup
-
-nslookup
-> set type=a
-> ns1.bluehost.com
-
-nslookup → Opens the interactive DNS lookup mode.
-
-set type=a → Requests A records (IPv4 addresses).
-
-ns1.bluehost.com → Queries the nameserver ns1.bluehost.com for an A record.
-
-Purpose:
-
-Resolves domain names to IPs.
-
-Checks if a domain has an A record at Bluehost's nameserver
-
-
-Ping tests network connectivity, MTU, and TTL limits.
-
-Traceroute maps the path to the destination.
-
-
-The hping3 tool is a powerful packet generator and analyzer that allows you to craft and send custom TCP, UDP, and ICMP packets. It is commonly used for network security testing, firewall rule checking, and performance measurement. Below is an explanation of each command you provided:
-
-1. hping3 -c 3 192.168.21.129
-
--c 3: Sends 3 packets before stopping.
-
-192.168.21.129: Target IP address.
-
-Explanation: This command sends 3 ICMP Echo Request (ping) packets to the target (similar to the ping command but with more customization).
-
-
-
----
-
-2. hping3 --scan 1-3000 -S 192.168.21.129
-
---scan 1-3000: Scans ports from 1 to 3000 on the target machine.
-
--S: Sends SYN packets (like a SYN scan in Nmap).
-
-192.168.21.129: Target IP.
-
-Explanation: Performs a SYN scan on ports 1 to 3000, checking which ports are open.
-
-
-
----
-
-3. hping3 192.168.21.129 --udp --rand-source --data 500
-
---udp: Sends UDP packets instead of TCP.
-
---rand-source: Uses randomized source IP addresses (spoofing).
-
---data 500: Sends 500 bytes of data in each packet.
-
-Explanation: Sends UDP packets with spoofed source IPs and 500-byte payloads. This can be used for testing firewalls, UDP-based services, or even as part of a DDoS attack simulation.
-
-
-
----
-
-4. Using Wireshark
-
-Explanation: You can capture packets generated by hping3 using Wireshark, a network traffic analyzer. This helps in understanding how packets are structured, how firewalls handle them, and how different scans appear on a network.
-
-
-
----
-
-5. hping3 -S 192.168.21.129 -p 80 -c 5
-
--S: Sends SYN packets (used in TCP handshake).
-
--p 80: Targets port 80 (HTTP service).
-
--c 5: Sends 5 packets before stopping.
-
-Explanation: Simulates a TCP SYN scan on port 80 to check if a web server is running on the target.
-
-
-
----
-
-6. hping3 192.168.21.129 --flood
-
---flood: Sends packets as fast as possible.
-
-Explanation: Floods the target with a massive number of packets, simulating a Denial of Service (DoS) attack.
-
-
-
----
-
-⚠ Warning
-
-Some of these commands, especially those with --flood or --rand-source, can be considered malicious if used on unauthorized networks. Always get permission before conducting security tests on any network.
-
-Would you like help analyzing packet captures from Wireshark?
 

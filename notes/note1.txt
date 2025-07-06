@@ -1,10 +1,60 @@
-pract1
-Exploring and building a verification lab for penetration testing (Kali Linux)
+1.Feed-forward Neural Network and train the network with
+different optimizers and compare the results.
 
-sudo apt update && sudo apt upgrade -y
-sudo apt-get install net-tools sudo
-sudo apt-get install openvas
-sudo systemctl start ssh
-nmap -sV [target_ip]
-nmap --version
+#import packages
+from sklearn.preprocessing import LabelBinarizer # LabelBinarizer is used to one-hot encode our integer labels as vector labels
+from sklearn.metrics import classification_report # to get formatted report
+from tensorflow.keras.models import Sequential # to create feed-forward neural network
+from tensorflow.keras.layers import Dense # to create fully connected network
+from tensorflow.keras.optimizers import SGD # For optimization
+from tensorflow.keras.datasets import mnist # load MNIST dataset
+from tensorflow.keras import backend as K
+import matplotlib.pyplot as plt
+import numpy as np
 
+# Load MNIST Dataset
+((trainX, trainY), (testX, testY)) = mnist.load_data()
+
+# Flatten 2D images into flat list
+trainX = trainX.reshape((trainX.shape[0], 28 * 28 * 1))
+testX = testX.reshape((testX.shape[0], 28 * 28 * 1))
+
+# scale data to the range of [0,1]
+trainX = trainX.astype("float32") / 255.0
+testX = testX.astype("float32") / 255.0
+
+# convert the labels from integers to vectors
+lb = LabelBinarizer()
+trainY = lb.fit_transform(trainY)
+testY = lb.transform(testY)
+
+# Define Neural Network Archiecture using Keras
+model = Sequential()
+model.add(Dense(256, input_shape=(28 * 28 * 1,), activation="sigmoid"))
+model.add(Dense(128, activation="sigmoid"))
+model.add(Dense(10, activation="softmax"))
+
+# train the model using SGD
+print("training network...")
+sgd = SGD(0.01) # Learning Rate of SGD Optimizer =0.01
+model.compile(loss="categorical_crossentropy", optimizer=sgd, metrics=["accuracy"])
+H = model.fit(trainX, trainY, validation_data=(testX, testY), epochs=50, batch_size=128)
+
+# evaluate the network
+print("evaluating network...")
+predictions = model.predict(testX, batch_size=128)
+print(classification_report(testY.argmax(axis=1),
+predictions.argmax(axis=1), target_names=[str(x) for x in lb.classes_]))
+
+# plot the training loss and accuracy
+plt.style.use("ggplot")
+plt.figure()
+plt.plot(np.arange(0, 50), H.history["loss"], label="train_loss")
+plt.plot(np.arange(0, 50), H.history["val_loss"], label="val_loss")
+plt.plot(np.arange(0, 50), H.history["accuracy"], label="train_acc")
+plt.plot(np.arange(0, 50), H.history["val_accuracy"], label="val_acc")
+plt.title("Training Loss and Accuracy")
+plt.xlabel("Epoch #")
+plt.ylabel("Loss/Accuracy")
+plt.legend()
+plt.show()

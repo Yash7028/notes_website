@@ -1,18 +1,104 @@
-exploit web app
+6.Transfer Learning on the suitable dataset
+(e.g. classify the cats versus dogs dataset from Kaggle).
 
-# open kali terminal 
-sudo apt install zaproxy
-# it will install the zaproxy 
-# after installing it enter
-zaproxy
-update-alternatives --config java
-# it will open the zaproxy
-# in zaproxy
-click on 'AUTOMATED SCAN'
-in 'url to attack' - enter 'certifiedhacker.com'
-click on 'ATTACK'
-click on 'ALERT' 
-in the section below it choose any one ALERT and save 
-it will open the website directly
-click on REPORT > GENERATE REPORT 
-it will generate the scanning report 
+import tensorflow as tf
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
+from tensorflow.keras.models import Model
+import os
+import zipfile
+import numpy as np
+from tensorflow.keras.preprocessing import image
+
+
+# 1. Download and extract dataset
+_URL = 'https://storage.googleapis.com/mledu-datasets/cats_and_dogs_filtered.zip'
+path_to_zip = tf.keras.utils.get_file('cats_and_dogs_filtered.zip', origin=_URL, extract=True)
+base_dir = os.path.join(os.path.dirname(path_to_zip), 'cats_and_dogs_filtered')
+
+
+# Download manually if not already present
+url = 'https://storage.googleapis.com/mledu-datasets/cats_and_dogs_filtered.zip'
+zip_path = tf.keras.utils.get_file('cats_and_dogs_filtered.zip', origin=url, extract=False)
+
+# Extract the dataset manually
+extract_path = os.path.join(os.path.dirname(zip_path), 'cats_and_dogs_filtered')
+if not os.path.exists(extract_path):
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(os.path.dirname(zip_path))
+
+# Correct paths after manual extraction
+base_dir = os.path.join(os.path.dirname(zip_path), 'cats_and_dogs_filtered')
+train_dir = os.path.join(base_dir, 'train')
+val_dir = os.path.join(base_dir, 'validation')
+
+train_dir = os.path.join(base_dir, 'train')
+val_dir = os.path.join(base_dir, 'validation')
+
+# 2. Create ImageDataGenerators
+train_datagen = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=40,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    width_shift_range=0.2,
+    height_shift_range=0.2
+)
+
+val_datagen = ImageDataGenerator(rescale=1./255)
+
+train_generator = train_datagen.flow_from_directory(
+    train_dir,
+    target_size=(160, 160),
+    batch_size=32,
+    class_mode='binary'
+)
+
+val_generator = val_datagen.flow_from_directory(
+    val_dir,
+    target_size=(160, 160),
+    batch_size=32,
+    class_mode='binary'
+)
+
+# 3. Load the pre-trained MobileNetV2 base model
+base_model = MobileNetV2(input_shape=(160, 160, 3), include_top=False, weights='imagenet')
+base_model.trainable = False  # freeze base model
+
+# 4. Add custom layers
+x = base_model.output
+x = GlobalAveragePooling2D()(x)
+x = Dense(1, activation='sigmoid')(x)  # Binary classification
+
+
+model = Model(inputs=base_model.input, outputs=x)
+
+# 5. Compile the model
+model.compile(optimizer='adam',
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
+
+# 6. Train the model
+history = model.fit(
+    train_generator,
+    epochs=5,
+    validation_data=val_generator
+)
+
+loss, acc = model.evaluate(val_generator)
+print(f"Validation Accuracy: {acc*100:.2f}%")
+
+
+    img = image.load_img("cat.jpg", target_size=(160, 160))
+    img_array = image.img_to_array(img) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
+    
+prediction = model.predict(img_array)
+
+
+    if prediction[0][0] > 0.5:
+        print("It's a Dog 🐶")
+    else:
+        print("It's a Cat 🐱")
+

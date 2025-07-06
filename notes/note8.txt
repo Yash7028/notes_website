@@ -1,5 +1,38 @@
-prac 8: SQL Injection.
+8.Recurrent neural network. E.g. (4-to-1 RNN) to show that the quantity of
+rain on a certain day also depends on the values of the previous
+day
 
-testfire.net
 
-' OR 1=1 --
+import numpy as np
+import tensorflow as tf
+
+
+# Define the training data
+rainfall_data = np.array([[0.2, 0.3, 0.1, 0.5, 0.4],
+                          [0.1, 0.4, 0.5, 0.2, 0.3],
+                          [0.3, 0.2, 0.4, 0.3, 0.1],
+                          [0.4, 0.1, 0.3, 0.4, 0.2],
+                          [0.5, 0.5, 0.2, 0.1, 0.5]])
+
+
+# Prepare the input and output data
+input_data = rainfall_data[:, :-1] # Previous four days' rainfall values
+output_data = rainfall_data[:, -1] # Current day's rainfall value
+
+# Define the RNN model
+model = tf.keras.Sequential([
+tf.keras.layers.SimpleRNN(10, input_shape=(4, 1)),
+tf.keras.layers.Dense(1)
+])
+
+# Compile the model
+model.compile(loss='mse', optimizer='adam')
+
+# Train the model
+model.fit(np.expand_dims(input_data, axis=2), output_data, epochs=100, batch_size=1)
+
+
+# Predict the rainfall for a new day
+new_input = np.array([[0.3, 0.2, 0.1, 0.4]]) # Previous four days' rainfall values
+predicted_rainfall = model.predict(np.expand_dims(new_input, axis=2))
+print("Predicted rainfall for the new day:", predicted_rainfall[0][0])

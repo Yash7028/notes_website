@@ -1,29 +1,23 @@
-1 Implement Feed-forward Neural Network and train the network with
-different optimizers and compare the results.
+1 Installing and setting environment variables for Working with Apache
+Hadoop 
 
-2 Write a Program to implement regularization to prevent the model from
-overfitting.
+2 Implementing Map-Reduce Program for Word Count problem,
 
-3 Implement deep learning for recognizing classes for datasets like CIFAR10 images for previously unseen images and assign them to one of the 10
-classes.
+3 Write a program to Implement a tri-gram model
 
-4 Implement deep learning for the Prediction of the autoencoder from the
-test data (e.g. MNIST data set).
+4 Download and install Spark. Create Graphical data and access the
+graphical data using Spark
 
-5 Implement Convolutional Neural Network for Digit Recognition on the
-MNIST Dataset.
+5 Write a Spark code for the given application and handle error and
+recovery of data
 
-6 Write a program to implement Transfer Learning on the suitable dataset
-(e.g. classify the cats versus dogs dataset from Kaggle).
+6 Write a Spark code to Handle the Streaming of data.
 
-7 Write a program for the Implementation of a Generative Adversarial
-Network for generating synthetic shapes (like digits)
+7 Install HBase and use the HBase Data model Store and retrieve data
 
-8 Write a program to implement a simple form of a recurrent neural network.
-E.g. (4-to-1 RNN) to show that the quantity of rain on a certain day
-also depends on the values of the previous day
+8 Perform importing and exporting of data between SQL and Hadoop
+using Sqoop.
+Write a Pig Script for solving counting problems.
 
-9 Implement LSTM for sentiment analysis on datasets like UMICH SI650 for
-similar.
-
-10 Write a program for object detection from the image/video
+9 Use Flume and transport the data from the various sources to a
+centralized data store

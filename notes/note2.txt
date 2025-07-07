@@ -1,52 +1,340 @@
-2.regularization to prevent the model from overfitting.
+2.Implementing Map-Reduce Program for Word Count problem
 
 
-# Importing the libraries
-import numpy as np
-import pandas as pd
-from sklearn import metrics
-from sklearn.linear_model import Lasso # L2 Regularization or Lasso
-from sklearn.linear_model import Ridge # L1 Regularization or Ridge
+🔧 Step 1: Create Mapper Script (mapper.py)
+python
+Copy
+Edit
+#!/usr/bin/env python3
+import sys
 
-# Import dataset
-df_train = pd.read_csv('train.csv')
-df_test = pd.read_csv('test.csv')
+for line in sys.stdin:
+    for word in line.strip().split():
+        print(f"{word.lower()}\t1")
+🔧 Step 2: Create Reducer Script (reducer.py)
+python
+Copy
+Edit
+#!/usr/bin/env python3
+import sys
 
-# Drop  duplicates if their  areany.
-df_train =df_train.dropna()
-df_test =df_test.dropna()
+current_word = None
+current_count = 0
 
-# Specifying training variables for Regression
-x_train = df_train['x']
-x_train = x_train.values.reshape(-1,1)
-y_train = df_train['y']
-y_train = y_train.values.reshape(-1,1)
+for line in sys.stdin:
+    word, count = line.strip().split("\t")
+    count = int(count)
 
-# Specifying test variables for Regression
-x_test = df_test['x']
-x_test = x_test.values.reshape(-1,1)
-y_test = df_test['y']
-y_test = y_test.values.reshape(-1,1)
+    if word == current_word:
+        current_count += count
+    else:
+        if current_word:
+            print(f"{current_word}\t{current_count}")
+        current_word = word
+        current_count = count
 
-#Buildong Lasso Regression Model
-lasso = Lasso()
+if current_word:
+    print(f"{current_word}\t{current_count}")
+🔧 Step 3: Make Scripts Executable
+bash
+Copy
+Edit
+chmod +x mapper.py reducer.py
+🚀 Step 4: Run Word Count with Hadoop Streaming
+bash
+Copy
+Edit
+hadoop fs -mkdir -p /input
+hadoop fs -put sample.txt /input
 
-#Fitting model on Train set
-lasso.fit(x_train,y_train)
+hadoop jar $HADOOP_HOME/share/hadoop/tools/lib/hadoop-streaming-*.jar \
+  -input /input \
+  -output /output_wordcount \
+  -mapper mapper.py \
+  -reducer reducer.py \
+  -file mapper.py \
+  -file reducer.py
+Then check the result:
 
-#Calculate Root Mean Squared Error.
-print("Lasso Train RMSE:", np.sqrt(metrics.mean_squared_error(y_train, lasso.predict(x_train))),5)
-print("Lasso Test RMSE:", np.sqrt(metrics.mean_squared_error(y_test, lasso.predict(x_test))),5)
+bash
+Copy
+Edit
+hadoop fs -cat /output_wordcount/part-00000
+💡 Tip:
+If you want to test without Hadoop, use:
 
-# Buildin Ridge regression model
-ridge = Ridge()
+bash
+Copy
+Edit
+cat sample.txt | ./mapper.py | sort | ./reducer.py
 
-# fitting model on train set
-ridge.fit(x_train,y_train)
+=================================================================================
 
-# Calculating Root Mean Squared Error.
-print("Ridge Train RMSE:", np.sqrt(metrics.mean_squared_error(y_train, ridge.predict(x_train))),5)
-print("Ridge Test RMSE:", np.sqrt(metrics.mean_squared_error(y_test, ridge.predict(x_test))),5)
+
+✅ Step 1: Install Java (JDK)
+🔧 Install JDK:
+Download JDK (Java 8 or 11 recommended):
+https://www.oracle.com/java/technologies/javase-downloads.html
+
+🔧 Set Environment Variables:
+JAVA_HOME → path to Java (e.g., C:\Program Files\Java\jdk-11)
+
+Add %JAVA_HOME%\bin to your PATH
+
+✅ Test:
+
+c
+Copy
+Edit
+java -version
+✅ Step 2: Install Hadoop
+📥 Download Hadoop Binary
+Official: https://hadoop.apache.org/releases.html
+
+Download a pre-built version (e.g., Hadoop 3.3.6)
+
+📁 Extract to:
+plaintext
+Copy
+Edit
+C:\hadoop
+✅ Step 3: Install winutils.exe (Windows support tool)
+Hadoop requires winutils.exe on Windows (since it's built for Linux/Unix):
+
+🔧 Steps:
+Download compatible winutils.exe from:
+👉 https://github.com/steveloughran/winutils
+Choose the correct Hadoop version folder, e.g., hadoop-3.3.6\bin\winutils.exe
+
+Place it here:
+
+plaintext
+Copy
+Edit
+C:\hadoop\bin\winutils.exe
+Set environment variables:
+
+plaintext
+Copy
+Edit
+HADOOP_HOME = C:\hadoop
+PATH += ;C:\hadoop\bin
+✅ Step 4: Set Hadoop Environment Variables
+Edit or create a file:
+
+plaintext
+Copy
+Edit
+C:\hadoop\etc\hadoop\hadoop-env.cmd
+Set:
+
+cmd
+Copy
+Edit
+set JAVA_HOME=C:\Program Files\Java\jdk-11
+✅ Step 5: Configure Hadoop XML Files
+Navigate to:
+
+plaintext
+Copy
+Edit
+C:\hadoop\etc\hadoop
+🔧 core-site.xml
+xml
+Copy
+Edit
+<configuration>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://localhost:9000</value>
+  </property>
+</configuration>
+🔧 hdfs-site.xml
+xml
+Copy
+Edit
+<configuration>
+  <property>
+    <name>dfs.replication</name>
+    <value>1</value>
+  </property>
+  <property>
+    <name>dfs.name.dir</name>
+    <value>file:///C:/hadoop_data/namenode</value>
+  </property>
+  <property>
+    <name>dfs.data.dir</name>
+    <value>file:///C:/hadoop_data/datanode</value>
+  </property>
+</configuration>
+Create the folders:
+
+cmd
+Copy
+Edit
+mkdir C:\hadoop_data\namenode
+mkdir C:\hadoop_data\datanode
+✅ Step 6: Format Hadoop FileSystem
+cmd
+Copy
+Edit
+hdfs namenode -format
+✅ Step 7: Start Hadoop (Manually)
+In 1st CMD:
+cmd
+Copy
+Edit
+start-dfs.cmd
+In 2nd CMD:
+cmd
+Copy
+Edit
+start-yarn.cmd
+✅ Step 8: Check Web Interfaces
+Service	URL
+NameNode UI	http://localhost:9870
+ResourceManager	http://localhost:8088
+
+✅ Step 9: Verify HDFS
+cmd
+Copy
+Edit
+hdfs dfs -mkdir /input
+hdfs dfs -put %HADOOP_HOME%\etc\hadoop\*.xml /input
+hdfs dfs -ls /input
+
+✅ Step 1: Install Java (JDK)
+🔧 Install JDK:
+Download JDK (Java 8 or 11 recommended):
+https://www.oracle.com/java/technologies/javase-downloads.html
+
+🔧 Set Environment Variables:
+JAVA_HOME → path to Java (e.g., C:\Program Files\Java\jdk-11)
+
+Add %JAVA_HOME%\bin to your PATH
+
+✅ Test:
+
+c
+Copy
+Edit
+java -version
+✅ Step 2: Install Hadoop
+📥 Download Hadoop Binary
+Official: https://hadoop.apache.org/releases.html
+
+Download a pre-built version (e.g., Hadoop 3.3.6)
+
+📁 Extract to:
+plaintext
+Copy
+Edit
+C:\hadoop
+✅ Step 3: Install winutils.exe (Windows support tool)
+Hadoop requires winutils.exe on Windows (since it's built for Linux/Unix):
+
+🔧 Steps:
+Download compatible winutils.exe from:
+👉 https://github.com/steveloughran/winutils
+Choose the correct Hadoop version folder, e.g., hadoop-3.3.6\bin\winutils.exe
+
+Place it here:
+
+plaintext
+Copy
+Edit
+C:\hadoop\bin\winutils.exe
+Set environment variables:
+
+plaintext
+Copy
+Edit
+HADOOP_HOME = C:\hadoop
+PATH += ;C:\hadoop\bin
+✅ Step 4: Set Hadoop Environment Variables
+Edit or create a file:
+
+plaintext
+Copy
+Edit
+C:\hadoop\etc\hadoop\hadoop-env.cmd
+Set:
+
+cmd
+Copy
+Edit
+set JAVA_HOME=C:\Program Files\Java\jdk-11
+✅ Step 5: Configure Hadoop XML Files
+Navigate to:
+
+plaintext
+Copy
+Edit
+C:\hadoop\etc\hadoop
+🔧 core-site.xml
+xml
+Copy
+Edit
+<configuration>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>hdfs://localhost:9000</value>
+  </property>
+</configuration>
+🔧 hdfs-site.xml
+xml
+Copy
+Edit
+<configuration>
+  <property>
+    <name>dfs.replication</name>
+    <value>1</value>
+  </property>
+  <property>
+    <name>dfs.name.dir</name>
+    <value>file:///C:/hadoop_data/namenode</value>
+  </property>
+  <property>
+    <name>dfs.data.dir</name>
+    <value>file:///C:/hadoop_data/datanode</value>
+  </property>
+</configuration>
+Create the folders:
+
+cmd
+Copy
+Edit
+mkdir C:\hadoop_data\namenode
+mkdir C:\hadoop_data\datanode
+✅ Step 6: Format Hadoop FileSystem
+cmd
+Copy
+Edit
+hdfs namenode -format
+✅ Step 7: Start Hadoop (Manually)
+In 1st CMD:
+cmd
+Copy
+Edit
+start-dfs.cmd
+In 2nd CMD:
+cmd
+Copy
+Edit
+start-yarn.cmd
+✅ Step 8: Check Web Interfaces
+Service	URL
+NameNode UI	http://localhost:9870
+ResourceManager	http://localhost:8088
+
+✅ Step 9: Verify HDFS
+cmd
+Copy
+Edit
+hdfs dfs -mkdir /input
+hdfs dfs -put %HADOOP_HOME%\etc\hadoop\*.xml /input
+hdfs dfs -ls /input
+
 
 
 

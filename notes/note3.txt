@@ -1,134 +1,131 @@
-3.Download and install Spark. Create Graphical data and access the
-graphical data using Spark.
+3. To implement a trigram model in Hadoop
+
+#bash
+mkdir trigram_project
+cd trigram_project
+
+#bash
+nano TrigramModel.java
 
 
-Step1: Start Cloudera , type in the terminal:
-#Cmd
-spark-shell
+#Java Code 
+import java.io.IOException;
+import java.util.StringTokenizer;
 
-Step2: 
-#CMD
-import org.apache.spark.graphx.Edge #working with edge attribute
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-import org.apache.spark.graphx.Graph #analyzing and processing large graphs in a distributed fashion
+public class TrigramModel {
 
-import org.apache.spark.graphx.lib._	#Various analytics functions for graphs.
+    public static class TrigramMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+        private final static IntWritable one = new IntWritable(1);
+        private Text trigram = new Text();
 
-Step3: To create property graph we should firstly create an array of vertices and an array of edges. For vertices array, type in your spark shell:
-#Cmd
-val verArray = Array(
-(1L, (“Philadelphia”, 1580863)),
-(2L, (“Baltimore”, 620961)),
-(3L, (“Harrisburg”, 49528)),
-(4L, (“Wilmington”, 70851)),
-(5L, (“New York”, 8175133)),
-(6L, (“Scranton”, 76089)))
+        public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+            // Convert to lowercase and remove non-alphanumeric characters
+            String line = value.toString().toLowerCase().replaceAll("[^a-zA-Z0-9\\s]", "");
+            StringTokenizer itr = new StringTokenizer(line);
 
+            if (itr.countTokens() < 3) return;
 
-The attributes of the vertices mean the city name and population, respectively. As an output you will see the following:
-verArray: Array[(Long, (String, Int))] = Array((1,(Philadelphia,1580863)),
-(2,(Baltimore,620961)), (3,(Harrisburg,49528)), (4,(Wilmington,70851)), (5,(New York,8175133)), (6,(Scranton,76089)))
+            String w1 = itr.nextToken();
+            String w2 = itr.nextToken();
 
-Step4: To create edges array, type in the spark shell:
-#Cmd
+            while (itr.hasMoreTokens()) {
+                String w3 = itr.nextToken();
+                trigram.set(w1 + " " + w2 + " " + w3);
+                context.write(trigram, one);
+                w1 = w2;
+                w2 = w3;
+            }
+        }
+    }
 
-val edgeArray = Array( Edge(2L, 3L, 113),
-Edge(2L, 4L, 106),
-Edge(3L, 4L, 128),
-Edge(3L, 5L, 248),
-Edge(3L, 6L, 162),
-Edge(4L, 1L, 39),
-Edge(1L, 6L, 168),
-Edge(1L, 5L, 130),
-Edge(5L, 6L, 159))
+    public static class TrigramReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+        private IntWritable result = new IntWritable();
 
-The first and the second arguments indicate the source and the destination vertices identifiers and the third argument means the edge property which, in our case, is the distance between corresponding cities in kilometres.
+        public void reduce(Text key, Iterable<IntWritable> values, Context context)
+                throws IOException, InterruptedException {
+            int sum = 0;
+            for (IntWritable val : values) sum += val.get();
+            result.set(sum);
+            context.write(key, result);
+        }
+    }
 
-The above-mentioned input will give us the following output:
-edgeArray: Array[org.apache.spark.graphx.Edge[Int]] = Array(Edge(2,3,113), Edge(2,4,106), Edge(3,4,128), Edge(3,5,248), Edge(3,6,162), Edge(4,1,39), Edge(1,6,168), Edge(1,5,130), Edge(5,6,159))
-Step5: Next, we will create RDDs from the vertices and edges arrays by using the sc.parallelize()command:
-Note: Resilient Distributed Dataset (RDD) is the fundamental data structure of Spark. They are immutable Distributed collections of objects of any type.
+    public static void main(String[] args) throws Exception {
+        Configuration conf = new Configuration();
+        Job job = Job.getInstance(conf, "Tri-gram Model");
 
-#cmd
-val verRDD = sc.parallelize(verArray) 
+        job.setJarByClass(TrigramModel.class);
+        job.setMapperClass(TrigramMapper.class);
+        job.setCombinerClass(TrigramReducer.class);
+        job.setReducerClass(TrigramReducer.class);
 
-You will see:
-verRDD: org.apache.spark.rdd.RDD[(Long, (String, Int))] = ParallelCollectionRDD[0] at
-parallelize at <console>:34
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
 
-#cmd
-val edgeRDD = sc.parallelize(edgeArray) 
+        FileInputFormat.addInputPath(job, new Path(args[0]));  // Input directory
+        FileOutputFormat.setOutputPath(job, new Path(args[1])); // Output directory
 
-You will see:
-edgeRDD:org.apache.spark.rdd.RDD[org.apache.spark.graphx.Edge[Int]] = ParallelCollectionRDD[1] at parallelize at <console>:34
-
-Step6: We are ready to build a property graph. The basic property graph constructor takes an RDD of vertices and an RDD of edges and builds a graph.
-
-#cmd
-val graph = Graph(verRDD, edgeRDD) 
-
-
-You will see:
-graph: org.apache.spark.graphx.Graph[(String, Int),Int] = org.apache.spark.graphx.impl.GraphImpl@79ce6829
-
-Step7: Let’s see some basic operations with graphs such as filtration by vertices, filtration by edges and operations with triplets.
-
-A)	Filtration by vertices
-To illustrate the filtration by vertices let’s find the cities with population more than 50000.
-
-To implement this, we will use the filter operator: 
-
-#Cmd
-
-graph.vertices.filter {
-case (id, (city, population)) => population > 50000
-}.collect.foreach {
-case (id, (city, population)) =>
-println(s”The population of $city is $population”)
-}
-
- output
-And this is the result we get:
-The population of Scranton is 76089 The population of Wilmington is 70851
-The population of Philadelphia is 1580863 The population of New York is 8175133 The population of Baltimore is 620961
-
-B)	Triplets
-One of the core functionalities of GraphX is exposed through the triplets RDD. There is one triplet for each edge which contains information about both the vertices and the edge information. Let’s take a look through graph.triplets.collect.
-
-As an example of working with triplets, we will find the distances between the connected cities:
-
-#Cmd 
-
-for (triplet <- graph.triplets.collect) {
-println(s”””The distance between ${triplet.srcAttr._1} and
-${triplet.dstAttr._1} is ${triplet.attr} kilometers”””)
-}
-
-Output
-As a result, you should see:
-The distance between Baltimore and Harrisburg is 113 kilometers The distance between Baltimore and Wilmington is 106 kilometers The distance between Harrisburg and Wilmington is 128 kilometers The distance between Harrisburg and New York is 248 kilometers The distance between Harrisburg and Scranton is 162 kilometers The distance between Wilmington and Philadelphia is 39 kilometers The distance between Philadelphia and New York is 130 kilometers The distance between Philadelphia and Scranton is 168 kilometers The distance between New York and Scranton is 159 kilometers
-
-C)	Filtration by edges
-Now, let’s consider another type of filtration, namely filtration by edges. For this purpose, we want to find the cities, the distance between which is less than 150 kilometers. If we type in the spark shell,
-
-#cmd
-graph.edges.filter {
-case Edge(city1, city2, distance) => distance < 150
-}.collect.foreach {
-case Edge(city1, city2, distance) =>
-println(s”The distance between $city1 and $city2 is $distance”)
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
 }
 
 
+#Paste the following code and save (CTRL + O, ENTER, CTRL + X
 
-Output
+#bash 
+javac -classpath $(hadoop classpath) -d . TrigramModel.java
 
-The result will be:
-The distance between 2 and 3 is 113
-The distance between 2 and 4 is 106
-The distance between 3 and 4 is 128
-The distance between 4 and 1 is 39
-The distance between 1 and 5 is 130
+
+#bash 
+jar -cvf trigram.jar TrigramModel*.class
+
+#bash 
+mkdir input
+echo "i am learning hadoop and i am enjoying learning it" > input/sample.txt
+
+#bash 
+hdfs dfs -mkdir -p /user/ubuntu/input
+hdfs dfs -put input/sample.txt /user/ubuntu/input/
+
+
+#bash 
+hadoop jar trigram.jar TrigramModel /user/ubuntu/input /user/ubuntu/output
+
+
+#bash 
+hdfs dfs -rm -r /user/ubuntu/output
+
+#bash 
+hdfs dfs -cat /user/ubuntu/output/part-r-00000
+
+#bash 
+hdfs dfs -get /user/ubuntu/output output_local
+cat output_local/part-r-00000
+
+
+
+sudo add-apt-repository ppa:openjdk-r/ppa
+sudo apt update
+
+sudo apt install openjdk-21-jdk -y
+
+
+
+
+
+
+
+
+
+
+
 
 
 

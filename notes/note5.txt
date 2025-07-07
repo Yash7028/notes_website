@@ -1,44 +1,128 @@
-5.Implement Convolutional Neural Network for Digit Recognition on the
-MNIST Dataset.
+5. To implement a trigram model in Hadoop
+
+#bash
+mkdir trigram_project
+cd trigram_project
+
+#bash
+nano TrigramModel.java
 
 
-from keras.datasets import mnist
-from tensorflow.keras.utils import to_categorical
-from keras.models import Sequential
-from keras.layers import Dense,Conv2D,Flatten
-import matplotlib.pyplot as plt
+#Java Code 
+import java.io.IOException;
+import java.util.StringTokenizer;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.mapreduce.*;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class TrigramModel {
+
+    public static class TrigramMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+        private final static IntWritable one = new IntWritable(1);
+        private Text trigram = new Text();
+
+        public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+            // Convert to lowercase and remove non-alphanumeric characters
+            String line = value.toString().toLowerCase().replaceAll("[^a-zA-Z0-9\\s]", "");
+            StringTokenizer itr = new StringTokenizer(line);
+
+            if (itr.countTokens() < 3) return;
+
+            String w1 = itr.nextToken();
+            String w2 = itr.nextToken();
+
+            while (itr.hasMoreTokens()) {
+                String w3 = itr.nextToken();
+                trigram.set(w1 + " " + w2 + " " + w3);
+                context.write(trigram, one);
+                w1 = w2;
+                w2 = w3;
+            }
+        }
+    }
+
+    public static class TrigramReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+        private IntWritable result = new IntWritable();
+
+        public void reduce(Text key, Iterable<IntWritable> values, Context context)
+                throws IOException, InterruptedException {
+            int sum = 0;
+            for (IntWritable val : values) sum += val.get();
+            result.set(sum);
+            context.write(key, result);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        Configuration conf = new Configuration();
+        Job job = Job.getInstance(conf, "Tri-gram Model");
+
+        job.setJarByClass(TrigramModel.class);
+        job.setMapperClass(TrigramMapper.class);
+        job.setCombinerClass(TrigramReducer.class);
+        job.setReducerClass(TrigramReducer.class);
+
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
+
+        FileInputFormat.addInputPath(job, new Path(args[0]));  // Input directory
+        FileOutputFormat.setOutputPath(job, new Path(args[1])); // Output directory
+
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
+}
 
 
-(X_train,Y_train),(X_test,Y_test)=mnist.load_data()
+#Paste the following code and save (CTRL + O, ENTER, CTRL + X
+
+#bash 
+javac -classpath $(hadoop classpath) -d . TrigramModel.java
 
 
-plt.imshow(X_train[0])
-plt.show()
+#bash 
+jar -cvf trigram.jar TrigramModel*.class
 
-plt.imshow(X_train[0])
-plt.show()
+#bash 
+mkdir input
+echo "i am learning hadoop and i am enjoying learning it" > input/sample.txt
+
+#bash 
+hdfs dfs -mkdir -p /user/ubuntu/input
+hdfs dfs -put input/sample.txt /user/ubuntu/input/
 
 
-print(X_train[0].shape)
-X_train = X_train.reshape(60000,28,28,1)
-X_test = X_test.reshape(10000,28,28,1)
+#bash 
+hadoop jar trigram.jar TrigramModel /user/ubuntu/input /user/ubuntu/output
 
 
-Y_train = to_categorical(Y_train, num_classes=10)
-Y_test = to_categorical(Y_test, num_classes=10)
+#bash 
+hdfs dfs -rm -r /user/ubuntu/output
 
-model=Sequential()
+#bash 
+hdfs dfs -cat /user/ubuntu/output/part-r-00000
 
-model.add(Conv2D(64,kernel_size=3,activation='relu',input_shape=(28,28,1)))
-model.add(Conv2D(32,kernel_size=3,activation='relu'))
+#bash 
+hdfs dfs -get /user/ubuntu/output output_local
+cat output_local/part-r-00000
 
-model.add (Flatten())
 
-model.add (Dense(10,activation='softmax'))
 
-model.compile(optimizer='adam',loss='categorical_crossentropy',metrics=['accuracy'])
+sudo add-apt-repository ppa:openjdk-r/ppa
+sudo apt update
 
-model.fit (X_train,Y_train,validation_data=(X_test,Y_test),epochs=3)
+sudo apt install openjdk-21-jdk -y
 
-print (model.predict(X_test[:4]))
-print(Y_train[0])
+
+
+
+
+
+
+
+
+
+

@@ -1,38 +1,71 @@
-8.Recurrent neural network. E.g. (4-to-1 RNN) to show that the quantity of
-rain on a certain day also depends on the values of the previous
-day
+8.Perform importing and exporting of data between SQL and Hadoop using Sqoop
+
+Theory:
+Sqoop is a tool commonly used in the context of Big Data to facilitate the transfer of data between Apache Hadoop and relational databases. The name "Sqoop" is a combination of "SQL" (Structured Query Language) and "Hadoop." Sqoop is designed to simplify the process of importing data from a relational database (such as MySQL, Oracle, or SQL Server) into Hadoop and exporting data from Hadoop back to a relational database.
+
+Steps to perform the practical:
+Step 1: Open terminal and type the below common to connect to mysql 
+
+[cloudera@quickstart ~]$ mysql -D retail_db -u retail_dba -p
+Enter password: cloudera mysql>
+
+Step2: List the table in mysql mysql> show tables;
++	+
+| Tables_in_retail_db |
++	+
+| categories	|
+| customers	|
+| departments	|
+| order_items	|
+| orders	|
+| products	|
++	+
+6 rows in set (0.00 sec)
+
+Step3: Select the data from customers table 
+
+mysql> select * from customers;
+
+12435 rows in set (0.01 sec)
+
+Step4: Open new terminal and type below command
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/retail_db -- table customers --username retail_dba --password cloudera --target-dir
+/sqoop_import_data -m 1
 
 
-import numpy as np
-import tensorflow as tf
 
 
-# Define the training data
-rainfall_data = np.array([[0.2, 0.3, 0.1, 0.5, 0.4],
-                          [0.1, 0.4, 0.5, 0.2, 0.3],
-                          [0.3, 0.2, 0.4, 0.3, 0.1],
-                          [0.4, 0.1, 0.3, 0.4, 0.2],
-                          [0.5, 0.5, 0.2, 0.1, 0.5]])
+Step5: View if data has been transferred from sql to hadoop or not [cloudera@quickstart ~]$ hadoop fs -cat /sqoop_import_data/part-m-00000
 
 
-# Prepare the input and output data
-input_data = rainfall_data[:, :-1] # Previous four days' rainfall values
-output_data = rainfall_data[:, -1] # Current day's rainfall value
+================================================================================
+8.a Write a Pig Script for solving counting problems.
 
-# Define the RNN model
-model = tf.keras.Sequential([
-tf.keras.layers.SimpleRNN(10, input_shape=(4, 1)),
-tf.keras.layers.Dense(1)
-])
+Theory:
+Apache Pig is a platform and high-level scripting language designed to simplify the process of writing complex data processing tasks for large datasets in a Hadoop ecosystem. It was developed by Yahoo! and later became an open-source project under the Apache Software Foundation.
 
-# Compile the model
-model.compile(loss='mse', optimizer='adam')
+Apache Pig provides a way to express data transformations and analysis in a more abstract, SQL-like language called Pig Latin. Pig Latin scripts are then compiled into a series of MapReduce jobs, which can be executed on a Hadoop cluster. This abstraction helps data analysts and engineers work with large datasets more easily without having to write low-level MapReduce code.
 
-# Train the model
-model.fit(np.expand_dims(input_data, axis=2), output_data, epochs=100, batch_size=1)
+Steps to open the Cloudera:
+Step1: Open Vmware workstation and drag the cloudera file in vmware
+Step2: Click on Cloudera manager if it doesn’t opens then do the step 3
+Step3: Click on Launch Cloudera Express and copy the sudo code listed there.
+Step4: Open the new terminal, paste the copied code followed with - - express and press enter. After it’s executed, you will get the username and password, go to cloud manager again and it will now ask for username and password.
+Step5: Enter username and password. Once it is done you are good to go for practical execution.
+
+Steps to perform the practical:
+Step1: Open the new terminal and create one file csv as input.csv [cloudera@quickstart ~]$ cat > /home/cloudera/input.csv hello...How are you?
+are you okay?
+I think need some break. dont overthink
+you can do it
+You and I are best friends
+
+Step2: After writing the code enter cntl+z to exit. Then view the data as: [cloudera@quickstart ~]$ cat /home/cloudera/input.csv
+hello...How are you? are you okay?
+I think need some break. dont overthink
+you can do it
 
 
-# Predict the rainfall for a new day
-new_input = np.array([[0.3, 0.2, 0.1, 0.4]]) # Previous four days' rainfall values
-predicted_rainfall = model.predict(np.expand_dims(new_input, axis=2))
-print("Predicted rainfall for the new day:", predicted_rainfall[0][0])
+
+
+

@@ -1,85 +1,148 @@
-3.deep learning for recognizing classes for datasets like CIFAR10 images for previously unseen images and assign them to one of the 10
-classes
+3.Download and install Spark. Create Graphical data and access the
+graphical data using Spark.
 
-import tensorflow as tf
-from tensorflow.keras import datasets, layers, models
-import matplotlib.pyplot as plt
-import numpy as np
-from sklearn.metrics import confusion_matrix , classification_report
-import numpy as np
 
-(X_train, y_train) , (X_test,y_test) = datasets.cifar10.load_data()
+Step1: Start Cloudera , type in the terminal:
+#Cmd
+spark-shell
 
-X_train.shape
-X_test.shape
+Step2: 
+#CMD
+import org.apache.spark.graphx.Edge #working with edge attribute
 
-y_train = y_train.reshape(-1,)
-y_train[:5]
-y_test = y_test.reshape(-1,)
+import org.apache.spark.graphx.Graph #analyzing and processing large graphs in a distributed fashion
 
-# CIFAR-10 image data
-for i in range(9):
-  #definesubplot
-    plt.subplot(330+1+i)
-    # plot raw pixel data
-    plt.imshow(X_train[i])
-   #show the figure
-    plt.show()
+import org.apache.spark.graphx.lib._	#Various analytics functions for graphs.
 
-def plot_sample(X, y, index):
-    plt.figure(figsize = (15,2))
-    plt.imshow(X[index])
-    plt.xlabel(classes[y[index]])
+Step3: To create property graph we should firstly create an array of vertices and an array of edges. For vertices array, type in your spark shell:
+#Cmd
+val verArray = Array(
+(1L, (“Philadelphia”, 1580863)),
+(2L, (“Baltimore”, 620961)),
+(3L, (“Harrisburg”, 49528)),
+(4L, (“Wilmington”, 70851)),
+(5L, (“New York”, 8175133)),
+(6L, (“Scranton”, 76089)))
 
-X_train = X_train / 255.0
-X_test = X_test / 255.0
 
-ann = models.Sequential([
-layers.Flatten(input_shape=(32,32,3)),
-layers.Dense(3000, activation='relu'),
-layers.Dense(1000, activation='relu'),
-layers.Dense(10, activation='softmax')
-])
+The attributes of the vertices mean the city name and population, respectively. As an output you will see the following:
+verArray: Array[(Long, (String, Int))] = Array((1,(Philadelphia,1580863)),
+(2,(Baltimore,620961)), (3,(Harrisburg,49528)), (4,(Wilmington,70851)), (5,(New York,8175133)), (6,(Scranton,76089)))
 
-ann.compile(optimizer='SGD',
-loss='sparse_categorical_crossentropy',
-metrics=['accuracy'])
+Step4: To create edges array, type in the spark shell:
+#Cmd
 
-ann.fit(X_train, y_train, epochs=5)
+val edgeArray = Array( Edge(2L, 3L, 113),
+Edge(2L, 4L, 106),
+Edge(3L, 4L, 128),
+Edge(3L, 5L, 248),
+Edge(3L, 6L, 162),
+Edge(4L, 1L, 39),
+Edge(1L, 6L, 168),
+Edge(1L, 5L, 130),
+Edge(5L, 6L, 159))
 
-y_pred = ann.predict(X_test)
-y_pred_classes = [np.argmax(element) for element in y_pred]
+The first and the second arguments indicate the source and the destination vertices identifiers and the third argument means the edge property which, in our case, is the distance between corresponding cities in kilometres.
 
-print("Classification Report: \n", classification_report(y_test, y_pred_classes))
+The above-mentioned input will give us the following output:
+edgeArray: Array[org.apache.spark.graphx.Edge[Int]] = Array(Edge(2,3,113), Edge(2,4,106), Edge(3,4,128), Edge(3,5,248), Edge(3,6,162), Edge(4,1,39), Edge(1,6,168), Edge(1,5,130), Edge(5,6,159))
+Step5: Next, we will create RDDs from the vertices and edges arrays by using the sc.parallelize()command:
+Note: Resilient Distributed Dataset (RDD) is the fundamental data structure of Spark. They are immutable Distributed collections of objects of any type.
 
-cnn = models.Sequential([
-layers.Conv2D(filters=32, kernel_size=(3, 3), activation='relu', input_shape=(32, 32, 3)),
-layers.MaxPooling2D((2, 2)),
-layers.Conv2D(filters=64, kernel_size=(3, 3), activation='relu'),
-layers.MaxPooling2D((2, 2)),
-layers.Flatten(),
-layers.Dense(64, activation='relu'),
-layers.Dense(10, activation='softmax'),
-])
+#cmd
+val verRDD = sc.parallelize(verArray) 
 
-cnn.compile(optimizer='adam',
-loss='sparse_categorical_crossentropy',
-metrics=['accuracy'])
+You will see:
+verRDD: org.apache.spark.rdd.RDD[(Long, (String, Int))] = ParallelCollectionRDD[0] at
+parallelize at <console>:34
 
-cnn.fit(X_train, y_train, epochs=3)
+#cmd
+val edgeRDD = sc.parallelize(edgeArray) 
 
-cnn.evaluate(X_test,y_test)
+You will see:
+edgeRDD:org.apache.spark.rdd.RDD[org.apache.spark.graphx.Edge[Int]] = ParallelCollectionRDD[1] at parallelize at <console>:34
 
-y_pred = cnn.predict(X_test)
-y_pred[:5]
+Step6: We are ready to build a property graph. The basic property graph constructor takes an RDD of vertices and an RDD of edges and builds a graph.
 
-Y_pred_classes = [np.argmax(element) for element in y_pred]
+#cmd
+val graph = Graph(verRDD, edgeRDD) 
 
-y_pred_classes[:5]
-y_test[:5]
 
-plot_sample(X_test, y_test,4)
-classes[y_pred_classes[4]]
+You will see:
+graph: org.apache.spark.graphx.Graph[(String, Int),Int] = org.apache.spark.graphx.impl.GraphImpl@79ce6829
+
+Step7: Let’s see some basic operations with graphs such as filtration by vertices, filtration by edges and operations with triplets.
+
+A)	Filtration by vertices
+To illustrate the filtration by vertices let’s find the cities with population more than 50000.
+
+To implement this, we will use the filter operator: 
+
+#Cmd
+
+graph.vertices.filter {
+case (id, (city, population)) => population > 50000
+}.collect.foreach {
+case (id, (city, population)) =>
+println(s”The population of $city is $population”)
+}
+
+ output
+And this is the result we get:
+The population of Scranton is 76089 The population of Wilmington is 70851
+The population of Philadelphia is 1580863 The population of New York is 8175133 The population of Baltimore is 620961
+
+B)	Triplets
+One of the core functionalities of GraphX is exposed through the triplets RDD. There is one triplet for each edge which contains information about both the vertices and the edge information. Let’s take a look through graph.triplets.collect.
+
+As an example of working with triplets, we will find the distances between the connected cities:
+
+#Cmd 
+
+for (triplet <- graph.triplets.collect) {
+println(s”””The distance between ${triplet.srcAttr._1} and
+${triplet.dstAttr._1} is ${triplet.attr} kilometers”””)
+}
+
+Output
+As a result, you should see:
+The distance between Baltimore and Harrisburg is 113 kilometers The distance between Baltimore and Wilmington is 106 kilometers The distance between Harrisburg and Wilmington is 128 kilometers The distance between Harrisburg and New York is 248 kilometers The distance between Harrisburg and Scranton is 162 kilometers The distance between Wilmington and Philadelphia is 39 kilometers The distance between Philadelphia and New York is 130 kilometers The distance between Philadelphia and Scranton is 168 kilometers The distance between New York and Scranton is 159 kilometers
+
+C)	Filtration by edges
+Now, let’s consider another type of filtration, namely filtration by edges. For this purpose, we want to find the cities, the distance between which is less than 150 kilometers. If we type in the spark shell,
+
+#cmd
+graph.edges.filter {
+case Edge(city1, city2, distance) => distance < 150
+}.collect.foreach {
+case Edge(city1, city2, distance) =>
+println(s”The distance between $city1 and $city2 is $distance”)
+}
+
+
+
+Output
+
+The result will be:
+The distance between 2 and 3 is 113
+The distance between 2 and 4 is 106
+The distance between 3 and 4 is 128
+The distance between 4 and 1 is 39
+The distance between 1 and 5 is 130
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

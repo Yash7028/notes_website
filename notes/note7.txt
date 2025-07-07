@@ -1,99 +1,178 @@
-7.Generative Adversarial Network for generating synthetic shapes (like digits)
+7.Install HBase and use the HBase Data model to store and retrieve data
 
-from numpy import expand_dims
-from numpy import ones
-from numpy import zeros
-from numpy.random import rand
-from numpy.random import randint
-from keras.datasets.mnist import load_data
-from keras.optimizers import Adam
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import Conv2D
-from keras.layers import Flatten
-from keras.layers import Dropout
-from keras.layers import LeakyReLU
+Theory:
+HBase is a distributed, scalable, and open-source NoSQL database system designed to
+handle large amounts of data in a distributed computing environment. It is part of the
+Apache Hadoop ecosystem and is often used for managing and storing vast amounts of
+semi-structured or unstructured data.
 
+HBase is a valuable tool in the big data landscape, offering a distributed and scalable
+solution for managing and querying large volumes of data with low-latency
+requirements. It is particularly well-suited for use cases where traditional relational
+databases may struggle to handle the scale and complexity of the data.
 
-#define the standalone discriminator model
-def define_discriminator(in_shape=(28,28,1)):
-    model = Sequential()
-    model.add(Conv2D(64, (3,3), strides=(2, 2), padding='same', input_shape=in_shape))
-    model.add(LeakyReLU(alpha=0.2))
-    model.add(Dropout(0.4))
-    model.add(Conv2D(64, (3,3), strides=(2, 2), padding='same'))
-    model.add(LeakyReLU(alpha=0.2))
-    model.add(Dropout(0.4))
-    model.add(Flatten())
-    model.add(Dense(1, activation='sigmoid'))
-    #compile model
-    opt = Adam(learning_rate=0.0002, beta_1=0.5)
-    model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
-    return model
+Steps to perform the practical:
+Step1: Start Cloudera
 
+Step2: start the hbase shell as:
+[cloudera@quickstart ~]$ hbase shell
+hbase(main):001:0>
 
-#define model
-model = define_discriminator()
-#summarize the model
-model.summary()
+Step3: Check status,version,table_help, whoami
+hbase(main):001:0> status
+1 active master, 0 backup masters, 1 servers, 0 dead, 2.0000 average load
 
+hbase(main):002:0> version
+1.2.0-cdh5.13.0, rUnknown, Wed Oct 4 11:16:18 PDT 2017
 
-# load and prepare mnist training images
-def load_real_samples():
-    #load mnist dataset
-    (trainX, _), (_, _) = load_data()
-    #expand to 3d, e.g. add channels dimension
-    X = expand_dims(trainX, axis=-1)
-    #convert from unsigned ints to floats
-    X = X.astype('float32')
-    #scale from [0,255] to [0,1]
-    X = X / 255.0
-    return X
+hbase(main):003:0> table_help
+Help for table-reference commands.
 
+hbase(main):004:0> whoami
+cloudera (auth:SIMPLE)
+groups: cloudera, default
 
-# select real samples
-def generate_real_samples(dataset, n_samples):
-    # choose random instances
-    ix = randint(0, dataset.shape[0], n_samples)
-    # retrieve selected image
-    X = dataset[ix]
-    # generate 'real' class labels (1)
-    y = ones((n_samples, 1))
-    return X, y
+Step4: Create table employee
+hbase(main):005:0> create 'employee','Name','ID','Designation','Salary','Department'
+0 row(s) in 1.3730 seconds
+=> Hbase::Table - employee
 
+Step5: Verify if table is created or not
+hbase(main):006:0> list
+TABLE
+employee
+=> ["employee"]
 
-# generate n fake samples with class labels
-def generate_fake_samples(n_samples):
-    # generate uniform random numbers in [0,1]
-    X = rand(28 * 28 * n_samples)
-    #reshape into a batch of grayscale images
-    X = X.reshape((n_samples, 28, 28, 1))
-    # generate 'fake' class labels (0)
-    y = zeros((n_samples, 1))
-    return X, y
+Step6:Disable the table employee
+hbase(main):007:0> disable 'employee'
+0 row(s) in 2.3730 seconds
 
-# train the discriminator model
-def train_discriminator(model, dataset, n_iter=100, n_batch=256):
-  half_batch = int(n_batch / 2)
-  # manually enumerate epochs
-  for i in range(n_iter):
-    X_real, y_real = generate_real_samples(dataset, half_batch) # get randomly selected 'real' samples
-    # update discriminator on real samples
-    _, real_acc = model.train_on_batch(X_real, y_real)
-    # generate 'fake' examples
-    X_fake, y_fake = generate_fake_samples(half_batch)
-    # update discriminator on fake samples
-    _, fake_acc = model.train_on_batch(X_fake, y_fake)
-    # summarize performance
-    print('>%d real=%.0f%% fake=%.0f%%' % (i+1, real_acc*100, fake_acc*100))
+Step7:Scan the table employee
+hbase(main):008:0> scan 'employee'
+ROW COLUMN+CELL
+ERROR: employee is disabled.
 
+Step8: Check if table employee is disabled or not
+hbase(main):010:0> is_disabled 'employee'
+true
+0 row(s) in 0.0250 seconds
 
-# define the discriminator model
-model = define_discriminator()
-# load image data
-dataset = load_real_samples()
-# fit the model
-train_discriminator(model, dataset)
+Step9:Try to disable all the table starting with letter e
+hbase(main):011:0> disable_all 'e.*'
+employee
+
+Disable the above 1 tables (y/n)?
+y
+1 tables successfully disabled
+
+Step10: Enable the employee table again
+hbase(main):012:0> enable 'employee'
+0 row(s) in 1.2720 seconds
+
+Step11: Check if employee table is enabled or not
+hbase(main):013:0> is_enabled 'employee'
+true
+0 row(s) in 0.0220 seconds
+
+Step12: Create new table student
+hbase(main):014:0> create 'student','name','age','course'
+0 row(s) in 1.2410 seconds
+=> Hbase::Table - student
+hbase(main):015:0>
+
+Step13: Insert two students data into the student table
+hbase(main):015:0> put 'student','sharath','name:fullname','sharath kumar'
+0 row(s) in 0.0490 seconds
+
+hbase(main):016:0> put 'student','sharath','age:presentage','24'
+0 row(s) in 0.0060 seconds
+
+hbase(main):017:0> put 'student','sharath','course:pursuing','Hadoop'
+0 row(s) in 0.0030 seconds
+
+hbase(main):018:0> put 'student','shashank','name:fullname','shashank kamble'
+0 row(s) in 0.0050 seconds
+
+hbase(main):019:0> put 'student','shashank','age:presentage','23'
+0 row(s) in 0.0020 seconds
+
+hbase(main):020:0> put 'student','shashank','course:pursuing','Java'
+0 row(s) in 0.0030 seconds
+
+Step14: Try to retrieve the students data from table student
+hbase(main):022:0> get 'student','shashank'
+COLUMN CELL
+age:presentage timestamp=1693559656275, value=23
+course:pursuing timestamp=1693559672356, value=Java
+name:fullname timestamp=1693559641013, value=shashank kamble
+
+hbase(main):023:0> get 'student','sharath'
+COLUMN CELL
+age:presentage timestamp=1693559577914, value=24
+course:pursuing timestamp=1693559608940, value=Hadoop
+name:fullname timestamp=1693559511147, value=sharath kumar
+
+hbase(main):024:0> get 'student','sharath','course'
+COLUMN CELL
+course:pursuing timestamp=1693559608940, value=Hadoop
+
+hbase(main):025:0> get 'student','shashank','course'
+COLUMN CELL
+course:pursuing timestamp=1693559672356, value=Java
+hbase(main):026:0> get 'student','sharath','name'
+COLUMN CELL
+name:fullname timestamp=1693559511147, value=sharath kumar
+
+hbase(main):027:0> get 'student','sharath','age'
+COLUMN CELL
+age:presentage timestamp=1693559577914, value=24
+
+Step15: Scan and count the student table
+hbase(main):028:0> scan 'student'
+ROW COLUMN+CELL
+sharath column=age:presentage, timestamp=1693559577914, value=24
+sharath column=course:pursuing, timestamp=1693559608940,
+value=Hadoop
+sharath column=name:fullname, timestamp=1693559511147, value=sharath
+kumar
+shashank column=age:presentage, timestamp=1693559656275, value=23
+shashank column=course:pursuing, timestamp=1693559672356, value=Java
+shashank column=name:fullname, timestamp=1693559641013,
+value=shashank kamble
+hbase(main):029:0> count 'student'
+2 row(s) in 0.0150 seconds
+
+Step16:Try to alter the student table
+hbase(main):042:0> alter 'student',NAME=>'name',VERSION=>5
+
+Step17: Put the altered value as:
+hbase(main):043:0> put 'student','shashank','name:fullname','shashank rao'
+0 row(s) in 0.0030 seconds
+
+Step18: Scan student and check if name is altered or not
+hbase(main):044:0> scan 'student'
+ROW COLUMN+CELL
+sharath column=age:presentage, timestamp=1693559577914, value=24
+sharath column=course:pursuing, timestamp=1693559608940,
+value=Hadoop
+sharath column=name:fullname, timestamp=1693559511147,
+value=sharath kumar
+shashank column=age:presentage, timestamp=1693559656275,
+value=23
+shashank column=course:pursuing,timestamp=1693559672356,
+value=Java
+shashank column=name:fullname, timestamp=1693560273772,
+value=shashank rao
+
+Step19: Delete the column name of student shashank
+hbase(main):045:0> delete 'student','shashank','name:fullname'
+0 row(s) in 0.0250 seconds
+
+Step20: Check if the name column has been deleted or not
+hbase(main):046:0> get 'student','shashank'
+COLUMN CELL
+age:presentage timestamp=1693559656275, value=23
+course:pursuing timestamp=1693559672356, value=Java
 
 
 

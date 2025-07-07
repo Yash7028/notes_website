@@ -1,184 +1,148 @@
-4.Write a Spark code to Handle the Streaming of data using RDD and
-Data frame.
+4.Download and install Spark. Create Graphical data and access the
+graphical data using Spark.
 
-Installation Procedure:
-Step 1: Go to Apache Spark's official download page and choose the latest release. For
-the package type, choose ‘Pre-built for Apache Hadoop’.
 
-Step 2: Once the download is completed, unzip the file, unzip the file using WinZip or
-WinRAR, or 7-ZIP.
+Step1: Start Cloudera , type in the terminal:
+#Cmd
+spark-shell
 
-Step 3: Create a folder called Spark under your user Directory like below and copy and
-paste the content from the unzipped file.
-C:\Users\<USER>\Spark
+Step2: 
+#CMD
+import org.apache.spark.graphx.Edge #working with edge attribute
 
-Step 4: Go to the conf folder and open the log file called log4j.properties. template.
-Change INFO to WARN (It can be an ERROR to reduce the log).
+import org.apache.spark.graphx.Graph #analyzing and processing large graphs in a distributed fashion
 
-Step 5: Now, we need to configure the path.
-Go to Control Panel -> System and Security -> System -> Advanced Settings ->
-Environment Variables
-Add below new user variable (or System variable) (To add a new user variable, click on
-the New button under User variable for <USER>)
+import org.apache.spark.graphx.lib._	#Various analytics functions for graphs.
 
-Click OK.
-Add %SPARK_HOME%\bin to the path variable.
+Step3: To create property graph we should firstly create an array of vertices and an array of edges. For vertices array, type in your spark shell:
+#Cmd
+val verArray = Array(
+(1L, (“Philadelphia”, 1580863)),
+(2L, (“Baltimore”, 620961)),
+(3L, (“Harrisburg”, 49528)),
+(4L, (“Wilmington”, 70851)),
+(5L, (“New York”, 8175133)),
+(6L, (“Scranton”, 76089)))
 
-Click OK.
 
-Step 6: Spark needs a piece of Hadoop to run. For Hadoop 3.3, you need to install
-winutils.exe.
-You can find winutils.exe on this link
-https://github.com/steveloughran/winutils/tree/master You can download it for your
-ease.
+The attributes of the vertices mean the city name and population, respectively. As an output you will see the following:
+verArray: Array[(Long, (String, Int))] = Array((1,(Philadelphia,1580863)),
+(2,(Baltimore,620961)), (3,(Harrisburg,49528)), (4,(Wilmington,70851)), (5,(New York,8175133)), (6,(Scranton,76089)))
 
-Step 7: Create a folder called winutils in C drive and create a folder called bin inside.
-Then, move the downloaded winutils file to the bin folder.
-C:\winutils\bin
+Step4: To create edges array, type in the spark shell:
+#Cmd
 
-Add the user (or system) variable %HADOOP_HOME% like SPARK_HOME.
+val edgeArray = Array( Edge(2L, 3L, 113),
+Edge(2L, 4L, 106),
+Edge(3L, 4L, 128),
+Edge(3L, 5L, 248),
+Edge(3L, 6L, 162),
+Edge(4L, 1L, 39),
+Edge(1L, 6L, 168),
+Edge(1L, 5L, 130),
+Edge(5L, 6L, 159))
 
-Click OK.
+The first and the second arguments indicate the source and the destination vertices identifiers and the third argument means the edge property which, in our case, is the distance between corresponding cities in kilometres.
 
-Step 8: To install Apache Spark, Java should be installed on your computer. If you don’t
-have java installed on your system. Please follow the below process
+The above-mentioned input will give us the following output:
+edgeArray: Array[org.apache.spark.graphx.Edge[Int]] = Array(Edge(2,3,113), Edge(2,4,106), Edge(3,4,128), Edge(3,5,248), Edge(3,6,162), Edge(4,1,39), Edge(1,6,168), Edge(1,5,130), Edge(5,6,159))
+Step5: Next, we will create RDDs from the vertices and edges arrays by using the sc.parallelize()command:
+Note: Resilient Distributed Dataset (RDD) is the fundamental data structure of Spark. They are immutable Distributed collections of objects of any type.
 
-Java Installation Steps:
-1. Go to the official Java site mentioned below the page.
-Accept Licence Agreement for Java SE Development Kit 8u201
-2. Download jdk-8u201-windows-x64.exe file
-3. Double Click on the Downloaded .exe file
-4. Click Next.
-5. Then below window will be displayed.
-6. Click Next.
-7. Below window will be displayed after some process.
-8. Click Close.
+#cmd
+val verRDD = sc.parallelize(verArray) 
 
-Test Java Installation
-Open Command Line and type java -version, then it should display the installed version
-of Java
+You will see:
+verRDD: org.apache.spark.rdd.RDD[(Long, (String, Int))] = ParallelCollectionRDD[0] at
+parallelize at <console>:34
 
-You should also check JAVA_HOME and the path of %JAVA_HOME%\bin included in
-user variables (or system variables)
-1. In the end, the environment variables have 3 new paths (if you need to add a Java
-path, otherwise SPARK_HOME and HADOOP_HOME).
+#cmd
+val edgeRDD = sc.parallelize(edgeArray) 
 
-Test Installation
-Open the command line and type spark-shell, and you will get the result below.
+You will see:
+edgeRDD:org.apache.spark.rdd.RDD[org.apache.spark.graphx.Edge[Int]] = ParallelCollectionRDD[1] at parallelize at <console>:34
 
-We have completed the spark installation on the Windows system.
+Step6: We are ready to build a property graph. The basic property graph constructor takes an RDD of vertices and an RDD of edges and builds a graph.
 
-Creating and Accessing Graphical data in Spark:
+#cmd
+val graph = Graph(verRDD, edgeRDD) 
 
-Creating and accessing a bar graph in using pyspark:
-To create a bar graph and access that bar graph in PySpark, you can use the Matplotlib
-library to create the bar graph and then use Spark to work with the data that you want
-to visualize in the bar graph. Here's a step-by-step guide:
 
-1) Install Dependencies:
-You'll need to install both PySpark and Matplotlib if you haven't already. You can use
-pip for installation:
-pip install pyspark
-pip install matplotlib
+You will see:
+graph: org.apache.spark.graphx.Graph[(String, Int),Int] = org.apache.spark.graphx.impl.GraphImpl@79ce6829
 
-2) Create a SparkSession:
-Initialize a SparkSession to work with PySpark:
+Step7: Let’s see some basic operations with graphs such as filtration by vertices, filtration by edges and operations with triplets.
 
-from pyspark.sql import SparkSession
-spark=SparkSession.builder.appName("BarGraphExample").getOrCreate()
+A)	Filtration by vertices
+To illustrate the filtration by vertices let’s find the cities with population more than 50000.
 
-3) Prepare Data:
-Prepare your data in a format that can be used to create a bar graph. For example, you
-can read data from a CSV file into a DataFrame:
-from pyspark.sql import Row
+To implement this, we will use the filter operator: 
 
-# Sample data
-data = [Row(category="A", value=10),
-Row(category="B", value=20),
-Row(category="C", value=15),
-Row(category="D", value=30)]
+#Cmd
 
-# Create a DataFrame
-df = spark.createDataFrame(data)
+graph.vertices.filter {
+case (id, (city, population)) => population > 50000
+}.collect.foreach {
+case (id, (city, population)) =>
+println(s”The population of $city is $population”)
+}
 
-4) Create the Bar Graph:
-Use Matplotlib to create the bar graph based on the data in the DataFrame:
-matplotlib.pyplot as plt
+ output
+And this is the result we get:
+The population of Scranton is 76089 The population of Wilmington is 70851
+The population of Philadelphia is 1580863 The population of New York is 8175133 The population of Baltimore is 620961
 
-# Extract data from the DataFrame
-categories = df.select("category").rdd.flatMap(lambda x: x).collect()
-values = df.select("value").rdd.flatMap(lambda x: x).collect()
+B)	Triplets
+One of the core functionalities of GraphX is exposed through the triplets RDD. There is one triplet for each edge which contains information about both the vertices and the edge information. Let’s take a look through graph.triplets.collect.
 
-# Create the bar graph
-plt.bar(categories, values)
-plt.xlabel("Categories")
-plt.ylabel("Values")
-plt.title("Bar Graph Example")
+As an example of working with triplets, we will find the distances between the connected cities:
 
-# Display the graph
-plt.show()
+#Cmd 
 
-This code will create a simple bar graph using Matplotlib and allow you to access and
-analyze your data using PySpark. You can customize the graph and data preparation
-based on your specific requirements and dataset.
+for (triplet <- graph.triplets.collect) {
+println(s”””The distance between ${triplet.srcAttr._1} and
+${triplet.dstAttr._1} is ${triplet.attr} kilometers”””)
+}
 
-5) Access and Analyze Data:
-You can still use Spark to perform operations on your data even after creating the bar
-graph. For example, you can use Spark to aggregate, filter, or manipulate the data and
-then update the bar graph accordingly.
+Output
+As a result, you should see:
+The distance between Baltimore and Harrisburg is 113 kilometers The distance between Baltimore and Wilmington is 106 kilometers The distance between Harrisburg and Wilmington is 128 kilometers The distance between Harrisburg and New York is 248 kilometers The distance between Harrisburg and Scranton is 162 kilometers The distance between Wilmington and Philadelphia is 39 kilometers The distance between Philadelphia and New York is 130 kilometers The distance between Philadelphia and Scranton is 168 kilometers The distance between New York and Scranton is 159 kilometers
 
-Let's say you have a DataFrame with sales data for different product categories, and
-you've already created a bar graph. Now, you want to update the bar graph to show the
-total sales for each category and add a title to the graph. Here's an example:
+C)	Filtration by edges
+Now, let’s consider another type of filtration, namely filtration by edges. For this purpose, we want to find the cities, the distance between which is less than 150 kilometers. If we type in the spark shell,
 
-from pyspark.sql importSparkSession
-import matplotlib.pyplot as plt
+#cmd
+graph.edges.filter {
+case Edge(city1, city2, distance) => distance < 150
+}.collect.foreach {
+case Edge(city1, city2, distance) =>
+println(s”The distance between $city1 and $city2 is $distance”)
+}
 
-# Create a SparkSession
-Spark=SparkSession.builder.appName("BarGraphExample").getOrCreate()
 
-# Sample data
-data = [("Electronics", 1000),
-("Clothing", 1500),
-("Books", 800)
-("Toys", 1200)]
 
-# Create a DataFrame
-columns = ["Category", "Sales"]
-df = spark.createDataFrame(data, columns)
+Output
 
-# Create the initial bar graph
-categories = df.select("Category").rdd.flatMap(lambda x: x).collect()
-sales = df.select("Sales").rdd.flatMap(lambda x: x).collect()
-plt.bar(categories, sales)
-plt.xlabel("Categories")
-plt.ylabel("Sales")
-plt.title("Bar Graph Example (Initial)")
+The result will be:
+The distance between 2 and 3 is 113
+The distance between 2 and 4 is 106
+The distance between 3 and 4 is 128
+The distance between 4 and 1 is 39
+The distance between 1 and 5 is 130
 
-# Display the initial graph
-plt.show()
 
-# Continue data analysis
-# Calculate total sales per category
-total_sales = df.groupBy("Category").sum("Sales").withColumnRenamed("sum(Sales)",
-"TotalSales")
 
-# Update the bar graph with total sales
-updated_categories = total_sales.select("Category").rdd.flatMap(lambda x: x).collect()
-updated_sales = total_sales.select("TotalSales").rdd.flatMap(lambda x: x).collect()
 
-# Create an updated bar graph with total sales
-plt.bar(updated_categories, updated_sales)
-plt.xlabel("Categories")
-plt.ylabel("Total Sales")
-plt.title("Bar Graph Example (Updated)")
 
-# Display the updated graph
-plt.show()
 
-6) Close Spark Session:
-Don't forget to stop the Spark session when you're done:
-spark.stop()
+
+
+
+
+
+
+
+
 
 
 
